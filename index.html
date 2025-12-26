@@ -2,41 +2,76 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>我的 TG 测试页</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>垒哥的精品小游戏</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background-color: #1a1a1a; color: white; text-align: center; font-family: sans-serif; padding-top: 50px; }
-        button { padding: 15px 30px; font-size: 18px; background: #24a1de; color: white; border: none; border-radius: 8px; cursor: pointer; }
-        #user-info { margin-top: 20px; color: #aaa; }
+        :root { --tg-theme-bg-color: #000; } /* 默认深色主题 */
+        body { 
+            margin: 0; padding: 0; 
+            background-color: var(--tg-theme-bg-color); 
+            color: white; font-family: sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; overflow: hidden;
+        }
+        .game-ui { text-align: center; }
+        button { padding: 12px 24px; font-size: 16px; border-radius: 10px; border: none; background: #24a1de; color: white; margin-top: 20px; }
     </style>
 </head>
 <body>
-    <h1>🚀 TG Mini App 连接成功！</h1>
-    <div id="user-info">正在获取用户信息...</div>
-    <br>
-    <button onclick="closeApp()">关闭小程序</button>
+
+    <div class="game-ui">
+        <h2 id="welcome-text">加载中...</h2>
+        <p>积分: <span id="score">0</span></p>
+        <button onclick="addScore()">点击加分 (触发震动)</button>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        
-        // 告知 TG 环境已就绪
+
+        // 1. 初始化
         tg.ready();
-        // 自动拉满屏幕高度
-        tg.expand();
+        tg.expand(); // 强制拉满屏幕
 
-        // 获取并展示用户信息
+        // 2. 告诉 TG 你的游戏主题色（让顶部电池电量栏变色）
+        tg.setHeaderColor('#1a1a1a'); 
+        tg.setBackgroundColor('#1a1a1a');
+
+        // 3. 获取用户信息
         const user = tg.initDataUnsafe?.user;
-        const infoDiv = document.getElementById('user-info');
         if (user) {
-            infoDiv.innerHTML = `你好，${user.first_name}！<br>你的 ID 是: <code>${user.id}</code>`;
-        } else {
-            infoDiv.innerHTML = "未能获取用户信息（请在手机 TG 中打开）";
+            document.getElementById('welcome-text').innerText = `加油，${user.first_name}!`;
         }
 
-        function closeApp() {
-            tg.close();
+        // 4. 配置原生主按钮 (MainButton)
+        tg.MainButton.setText("确认结算积分");
+        tg.MainButton.setParams({
+            color: '#31b545', // 绿色
+            text_color: '#ffffff'
+        });
+        
+        let score = 0;
+        function addScore() {
+            score += 10;
+            document.getElementById('score').innerText = score;
+            
+            // 5. 触发物理震动 (轻微感)
+            tg.HapticFeedback.impactOccurred('light');
+
+            // 当分数大于 30，显示底部原生按钮
+            if (score >= 30) {
+                tg.MainButton.show();
+            }
         }
+
+        // 6. 监听原生主按钮点击
+        tg.MainButton.onClick(() => {
+            tg.showAlert(`恭喜垒哥！你最终得分是: ${score}`);
+            tg.MainButton.hide();
+        });
+
+        // 7. 启用关闭确认（防止玩家误触返回导致退出游戏）
+        tg.enableClosingConfirmation();
     </script>
 </body>
 </html>
