@@ -3,75 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>垒哥的精品小游戏</title>
+    <title>我的 TG 小游戏</title>
+    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
     <style>
-        :root { --tg-theme-bg-color: #000; } /* 默认深色主题 */
-        body { 
-            margin: 0; padding: 0; 
-            background-color: var(--tg-theme-bg-color); 
-            color: white; font-family: sans-serif;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; overflow: hidden;
+        /* 使用 Telegram 官方定义的 CSS 变量，使页面颜色自动跟随用户的 TG 主题（深色/浅色） */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #222222);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden; /* 禁止页面滑动，更像 App */
         }
-        .game-ui { text-align: center; }
-        button { padding: 12px 24px; font-size: 16px; border-radius: 10px; border: none; background: #24a1de; color: white; margin-top: 20px; }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--tg-theme-button-color, #24a1de);
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background-color: var(--tg-theme-button-color, #24a1de);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .btn:active {
+            transform: scale(0.95); /* 点击缩放效果 */
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
 
-    <div class="game-ui">
-        <h2 id="welcome-text">加载中...</h2>
-        <p>积分: <span id="score">0</span></p>
-        <button onclick="addScore()">点击加分 (触发震动)</button>
+    <div class="container">
+        <div id="user-info">
+            <img id="user-photo" class="avatar" src="https://ui-avatars.com/api/?name=User" alt="avatar">
+            <h2 id="user-name">加载中...</h2>
+        </div>
+
+        <p>这是一个深度集成的测试页面</p>
+        
+        <button class="btn" onclick="handleAction()">点击触发震动</button>
+        
+        <div id="status">环境探测中...</div>
     </div>
 
     <script>
+        // 初始化 WebApp 对象
         const tg = window.Telegram.WebApp;
 
-        // 1. 初始化
+        // 1. 告知 TG 准备就绪，隐藏加载动画
         tg.ready();
-        tg.expand(); // 强制拉满屏幕
 
-        // 2. 告诉 TG 你的游戏主题色（让顶部电池电量栏变色）
-        tg.setHeaderColor('#1a1a1a'); 
-        tg.setBackgroundColor('#1a1a1a');
+        // 2. 强制全屏（非常重要！）
+        tg.expand();
 
-        // 3. 获取用户信息
+        // 3. 启用关闭确认（滑动手势退出时会弹窗询问，防止误触）
+        tg.enableClosingConfirmation();
+
+        // 4. 设置顶部状态栏颜色
+        tg.setHeaderColor('secondary_bg_color');
+
+        // 5. 获取并渲染用户信息
         const user = tg.initDataUnsafe?.user;
         if (user) {
-            document.getElementById('welcome-text').innerText = `加油，${user.first_name}!`;
-        }
-
-        // 4. 配置原生主按钮 (MainButton)
-        tg.MainButton.setText("确认结算积分");
-        tg.MainButton.setParams({
-            color: '#31b545', // 绿色
-            text_color: '#ffffff'
-        });
-        
-        let score = 0;
-        function addScore() {
-            score += 10;
-            document.getElementById('score').innerText = score;
-            
-            // 5. 触发物理震动 (轻微感)
-            tg.HapticFeedback.impactOccurred('light');
-
-            // 当分数大于 30，显示底部原生按钮
-            if (score >= 30) {
-                tg.MainButton.show();
+            document.getElementById('user-name').innerText = `你好, ${user.first_name}!`;
+            document.getElementById('status').innerText = `用户 ID: ${user.id}`;
+            if (user.photo_url) {
+                document.getElementById('user-photo').src = user.photo_url;
             }
+        } else {
+            document.getElementById('user-name').innerText = "外部浏览器模式";
+            document.getElementById('status').innerText = "请在 Telegram 中打开此页面";
         }
 
-        // 6. 监听原生主按钮点击
+        // 6. 配置底部原生主按钮 (MainButton)
+        tg.MainButton.setText("确认并退出");
+        tg.MainButton.show(); // 显示底部的原生大按钮
         tg.MainButton.onClick(() => {
-            tg.showAlert(`恭喜垒哥！你最终得分是: ${score}`);
-            tg.MainButton.hide();
+            tg.showConfirm("垒哥，确定要退出游戏吗？", (ok) => {
+                if (ok) tg.close();
+            });
         });
 
-        // 7. 启用关闭确认（防止玩家误触返回导致退出游戏）
-        tg.enableClosingConfirmation();
+        // 7. 处理点击交互
+        function handleAction() {
+            // 触发物理震动反馈（轻微感）
+            tg.HapticFeedback.impactOccurred('medium');
+            
+            // 弹出原生提示框
+            tg.showAlert("震动反馈已触发！");
+        }
     </script>
 </body>
 </html>
