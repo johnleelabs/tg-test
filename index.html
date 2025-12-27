@@ -108,7 +108,7 @@
         tg.MainButton.setText("确认并退出");
         tg.MainButton.show(); // 显示底部的原生大按钮
         tg.MainButton.onClick(() => {
-            tg.showConfirm("垒哥，确定要退出游戏吗？", (ok) => {
+            tg.showConfirm("确定要退出游戏吗？", (ok) => {
                 if (ok) tg.close();
             });
         });
